@@ -1,52 +1,50 @@
 {
-    "manifest_version":3,
-    "name":"GfG to GitHub",
-    "description":"Automatically pushes your GeeksForGeeks solution to a GitHub Repository of your choice within seconds on successful submission.",
-    "homepage_url":"https://github.com/AtharvaNanavate/GfG-To-GitHub",
-    "version":"1.1.2",
-    "author": "Atharva Nanavate",
-    "action": {
-        "default_icon": "assets/thumbnail.png",
-        "default_popup": "popup.html"
-      },
-      "icons": {
-        "16": "assets/logo_128x128.png",
-        "48": "assets/logo_128x128.png",
-        "128": "assets/logo_128x128.png"
-      },
-      "background": {
-        "service_worker": "scripts/background.js"
-      },
-      "permissions": [
-        "scripting",
-        "storage"
-      ],
-      "host_permissions":[
-        "https://github.com/*",
-        "https://api.github.com/*",
-        "https://practice.geeksforgeeks.org/*",
-        "https://www.geeksforgeeks.org/*"
-      ],
-      "web_accessible_resources": [{
-        "resources": ["scripts/extractCode.js","script/nodeDeletion.js"],
-        "matches": ["https://practice.geeksforgeeks.org/*","https://www.geeksforgeeks.org/*"]
-      }],
-      "content_scripts": [
-        {
+  "manifest_version": 3,
+  "name": "Hackerrank to GitHub",
+  "description": "Automatically pushes your Hackerrank solution to a GitHub Repository of your choice within seconds on successful submission.",
+  "homepage_url": "https://github.com/khyati0812/HackerrankToGithub",
+  "version": "1.1.2",
+  "author": "Khyati Chaudhary",
+  "action": {
+      "default_icon": "assets/thumbnail.png",
+      "default_popup": "popup.html"
+  },
+  "icons": {
+    "16": "assets/logo_128x128.png",
+    "48": "assets/logo_128x128.png",
+    "128": "assets/logo_128x128.png"
+  },
+  "background": {
+      "service_worker": "scripts/background.js"
+  },
+  "permissions": [
+      "scripting",
+      "storage"
+  ],
+  "host_permissions": [
+      "https://github.com/*",
+      "https://api.github.com/*",
+      "https://www.hackerrank.com/*"
+  ],
+  "web_accessible_resources": [{
+      "resources": ["scripts/extractCode.js", "scripts/nodeDeletion.js"],
+      "matches": ["*://www.hackerrank.com/*"] 
+  }],
+  "content_scripts": [
+      {
           "matches": [
             "https://github.com/*",
-            "https://practice.geeksforgeeks.org/*",
-            "https://www.geeksforgeeks.org/*"
+            "https://api.github.com/*",
+            "https://www.hackerrank.com/*"
           ],
           "js": [
-            "scripts/localSetup.js",
-            "scripts/geeksForGeeks.js"
+              "scripts/localSetup.js",
+              "scripts/geeksForGeeks.js"
           ],
-          "run_at": "document_idle"
-        }
-      ],
-     "content_security_policy": {
-      "extension pages": "script-src 'self'; object-src 'self';"
-    }
-    
+          "run_at": "document_start"
+      }
+  ],
+  "content_security_policy": {
+      "extension_pages": "script-src 'self'; object-src 'self';"
+  }
 }

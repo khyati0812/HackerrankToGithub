@@ -2,7 +2,7 @@ const startGitHubOAuthProcess = {
   
     init() {
       this.githubUserToken = 'githubAccessToken';
-      this.OAuthClientID = ''; //Fill your OAuth Client ID here
+      this.OAuthClientID = 'Ov23liKltg1WsdYBrTy8'; //Fill your OAuth Client ID here
       this.githubOAuthURL = 'https://github.com/login/oauth/authorize';
       this.githubRedirectURL = 'https://github.com/';
     },

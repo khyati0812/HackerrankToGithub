@@ -45,8 +45,6 @@ chrome.storage.local.get('githubAccessToken', (responseToken) => {
                   const { userStatistics } = userStats;
                   if (userStatistics && userStatistics.solved) {
                     $('#successful_submissions').text(userStatistics.solved);
-                    $('#successful_submissions_school').text(userStatistics.school);
-                    $('#successful_submissions_basic').text(userStatistics.basic);
                     $('#successful_submissions_easy').text(userStatistics.easy);
                     $('#successful_submissions_medium').text(userStatistics.medium);
                     $('#successful_submissions_hard').text(userStatistics.hard);

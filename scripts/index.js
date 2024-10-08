@@ -75,7 +75,7 @@ const createRepository = (accessToken, repositoryName) => {
     name,
     private: true,
     auto_init: true,
-    description: 'This repository serves as a collection of my solutions to various GeeksforGeeks Data Structures and Algorithms (DSA) problems, organized by the level of difficulty. - Created using [GfG To GitHub](https://github.com/AtharvaNanavate/GfG-To-GitHub)',
+    description: 'This repository serves as a collection of my solutions to various GeeksforGeeks Data Structures and Algorithms (DSA) problems, organized by the level of difficulty. - Created using [Hackerrank To GitHub](https://github.com/khyati0812/HackerrankToGithub)',
   };
   repositoryInit = JSON.stringify(repositoryInit);
 
@@ -100,7 +100,7 @@ const linkRepoStatusCode = (statusCode, repositoryName) => {
       $('#unlinkRepository').hide();
       $('#error_info').attr("style","display: block; line-height: 1;");
       $('#error_info').html(
-        `Error linking <a target="blank" href="${`https://github.com/${repositoryName}`}">${repositoryName}</a> to 'GfG To GitHub'. <br> This repository has been moved permenantly. Try creating a new one.`,
+        `Error linking <a target="blank" href="${`https://github.com/${repositoryName}`}">${repositoryName}</a> to 'Hackerrank To GitHub'. <br> This repository has been moved permenantly. Try creating a new one.`,
       );
       $('#error_info').show();
       break;
@@ -110,7 +110,7 @@ const linkRepoStatusCode = (statusCode, repositoryName) => {
       $('#unlinkRepository').hide();
       $('#error_info').attr("style","display: block; line-height: 1;");
       $('#error_info').html(
-        `Error linking <a target="blank" href="${`https://github.com/${repositoryName}`}">${repositoryName}</a> to 'GfG To GitHub'. <br> Forbidden action. Please make sure you have the right access to this repository.`,
+        `Error linking <a target="blank" href="${`https://github.com/${repositoryName}`}">${repositoryName}</a> to 'Hackerrank To GitHub'. <br> Forbidden action. Please make sure you have the right access to this repository.`,
       );
       $('#error_info').show();
       break;
@@ -119,7 +119,7 @@ const linkRepoStatusCode = (statusCode, repositoryName) => {
       $('#success_acknowledgement').hide();
       $('#unlinkRepository').hide();
       $('#error_info').attr("style","display: block; line-height: 1;");
-      $('#error_info').html(`Error linking <a target="blank" href="${`https://github.com/${repositoryName}`}">${repositoryName}</a> to 'GfG To GitHub'. <br> Resource not found. Make sure you enter the right repository name.`,);
+      $('#error_info').html(`Error linking <a target="blank" href="${`https://github.com/${repositoryName}`}">${repositoryName}</a> to 'Hackerrank To GitHub'. <br> Resource not found. Make sure you enter the right repository name.`,);
       $('#error_info').show();
       
       break;
@@ -160,7 +160,7 @@ const linkRepo = (accessToken, repositoryName) => {
             {current_phase:'solve_and_push', repo: responseText.html_url},
             () => {
               $('#error_info').hide();
-              $('#success_acknowledgement').html(`Successfully linked <a target="blank" href="${responseText.html_url}">${repositoryName}</a> to 'GfG To GitHub'. Start solving on <a href="https://www.geeksforgeeks.org/explore">GeeksforGeeks</a>&nbsp; now!`,);
+              $('#success_acknowledgement').html(`Successfully linked <a target="blank" href="${responseText.html_url}">${repositoryName}</a> to 'Hackerrank To GitHub'. Start solving on <a href="https://www.geeksforgeeks.org/explore">GeeksforGeeks</a>&nbsp; now!`,);
               $('#success_acknowledgement').show();
               $('#unlinkRepository').show();
             },
@@ -173,8 +173,7 @@ const linkRepo = (accessToken, repositoryName) => {
                 const { userStatistics } = solvedProblems;
                 if (userStatistics && userStatistics.solved) {
                   $('#successful_submissions').text(userStatistics.solved);
-                  $('#successful_submissions_school').text(userStatistics.school);
-                  $('#successful_submissions_basic').text(userStatistics.basic);
+    
                   $('#successful_submissions_easy').text(userStatistics.easy);
                   $('#successful_submissions_medium').text(userStatistics.medium);
                   $('#successful_submissions_hard').text(userStatistics.hard);
@@ -242,7 +241,7 @@ $('#linkRepositoryButton').on('click', () => {
     chrome.storage.local.get('githubAccessToken', (gitHubToken) => {
       const accessToken = gitHubToken.githubAccessToken;
       if (accessToken === null || accessToken === undefined) {
-        $('#error_info').text('Authorization error - GfG To GitHub does not have access to your GitHub account. Launch extension and click on Authenticate to grant access',);
+        $('#error_info').text('Authorization error - Hackerrank To GitHub does not have access to your GitHub account. Launch extension and click on Authenticate to grant access',);
         $('#error_info').show();
         $('#success_acknowledgement').hide();
       } 
@@ -256,7 +255,7 @@ $('#linkRepositoryButton').on('click', () => {
         chrome.storage.local.get('githubUsername', (github_username) => {
           const username = github_username.githubUsername;
           if (!username) {
-            $('#error_info').text('Authorization error - GfG To GitHub does not have access to your GitHub account. Launch extension and click on Authenticate to grant access',);
+            $('#error_info').text('Authorization error - Hackerrank To GitHub does not have access to your GitHub account. Launch extension and click on Authenticate to grant access',);
             $('#error_info').show();
             $('#success_acknowledgement').hide();
           } 
@@ -283,7 +282,7 @@ chrome.storage.local.get('current_phase', (phase) => {
       const accessToken = gitHubToken.githubAccessToken;
       if (accessToken === null || accessToken === undefined) {
         $('#error_info').text(
-          'Authorization error - GfG To GitHub does not have access to your GitHub account. Launch extension and click on Authenticate to grant access',
+          'Authorization error - Hackerrank To GitHub does not have access to your GitHub account. Launch extension and click on Authenticate to grant access',
         );
         $('#error_info').show();
         $('#success_acknowledgement').hide();
@@ -295,7 +294,7 @@ chrome.storage.local.get('current_phase', (phase) => {
         chrome.storage.local.get('github_LinkedRepository', (repoName) => {
           const linkedRepository = repoName.github_LinkedRepository;
           if (!linkedRepository) {
-            $('#error_info').text('Improper Authorization error - Grant GfG To GitHub access to your GitHub account to continue (click GfG To GitHub extension on the top right to proceed)',);
+            $('#error_info').text('Improper Authorization error - Grant Hackerrank To GitHub access to your GitHub account to continue (click Hackerrank To GitHub extension on the top right to proceed)',);
             $('#error_info').show();
             $('#success_acknowledgement').hide();
 

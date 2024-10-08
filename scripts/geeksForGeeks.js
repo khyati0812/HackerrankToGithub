@@ -2,16 +2,17 @@ const codeLanguage = {
   C: '.c',
   'C++': '.cpp',
   'C#': '.cs',
-  Java: '.java',
+  java: 'java',
+  sql: 'sql',
   Python: '.py',
   Python3: '.py',
   JavaScript: '.js',
-  Javascript: '.js'
+  Javascript: '.js',
 };
 
 let successfulSubmissionFlag = true;
 
-const uploadToGitHubRepository = (
+const uploadToGitHubRepository = async (
   githubAccessToken,
   linkedRepository,
   solution,
@@ -19,128 +20,192 @@ const uploadToGitHubRepository = (
   uploadFileName,
   sha,
   commitMessage,
-  problemDifficulty,
+  problemDifficulty
 ) => {
   const uploadPathURL = `https://api.github.com/repos/${linkedRepository}/contents/${problemDifficulty}/${problemTitle}/${uploadFileName}`;
 
-  let uploadData = {
+  const uploadData = {
     message: commitMessage,
-    content: solution,
+    content: btoa(solution), // Encode solution to base64
     sha,
   };
 
-  uploadData = JSON.stringify(uploadData);
-
   const xhttp = new XMLHttpRequest();
-  xhttp.addEventListener('readystatechange', function () {
-    if (xhttp.readyState === 4) {
-      if (xhttp.status === 200 || xhttp.status === 201) {
-        const updatedSha = JSON.parse(xhttp.responseText).content.sha;
 
-        chrome.storage.local.get('userStatistics', (statistics) => {
-          let { userStatistics } = statistics;
-          if (userStatistics === null || userStatistics === {} || userStatistics === undefined) {
+  return new Promise((resolve, reject) => {
+    xhttp.onreadystatechange = function () {
+      if (xhttp.readyState === 4) {
+        if (xhttp.status === 200 || xhttp.status === 201) {
+          const updatedSha = JSON.parse(xhttp.responseText).content.sha;
 
-            userStatistics = {};
-            userStatistics.solved = 0;
-            userStatistics.school = 0;
-            userStatistics.basic = 0;
-            userStatistics.easy = 0;
-            userStatistics.medium = 0;
-            userStatistics.hard = 0;
-            userStatistics.sha = {};
+          // Update user statistics
+          chrome.storage.local.get('userStatistics', (statistics) => {
+            if (chrome.runtime.lastError) {
+              console.error("Error accessing userStatistics:", chrome.runtime.lastError);
+              return reject(new Error("Failed to access user statistics."));
+            }
 
-          }
-          const githubFilePath = problemTitle + uploadFileName;
+            let { userStatistics } = statistics;
 
-          if (uploadFileName === 'README.md' && sha === null) {
-            userStatistics.solved += 1;
-            userStatistics.school += difficulty === 'School' ? 1 : 0;
-            userStatistics.basic += difficulty === 'Basic' ? 1 : 0;
-            userStatistics.easy += difficulty === 'Easy' ? 1 : 0;
-            userStatistics.medium += difficulty === 'Medium' ? 1 : 0;
-            userStatistics.hard += difficulty === 'Hard' ? 1 : 0;
-          }
-          userStatistics.sha[githubFilePath] = updatedSha;
-          chrome.storage.local.set({ userStatistics }, () => {
-            console.log(`${uploadFileName} - Commit Successful`,);
+            if (!userStatistics || Object.keys(userStatistics).length === 0) {
+              userStatistics = {
+                solved: 0,
+                easy: 0,
+                medium: 0,
+                hard: 0,
+                sha: {},
+              };
+            }
+
+            const githubFilePath = problemTitle + uploadFileName;
+
+            if (uploadFileName === 'README.md' && sha === null) {
+              userStatistics.solved += 1;
+              userStatistics.easy += problemDifficulty === 'Easy' ? 1 : 0;
+              userStatistics.medium += problemDifficulty === 'Medium' ? 1 : 0;
+              userStatistics.hard += problemDifficulty === 'Hard' ? 1 : 0;
+            }
+
+            userStatistics.sha[githubFilePath] = updatedSha;
+
+            chrome.storage.local.set({ userStatistics }, () => {
+              if (chrome.runtime.lastError) {
+                console.error("Error setting userStatistics:", chrome.runtime.lastError);
+                return reject(new Error("Failed to update user statistics."));
+              }
+              console.log(`${uploadFileName} - Commit Successful`);
+              resolve(updatedSha);
+            });
           });
-        });
+        } else {
+          reject(new Error(`Failed to upload: ${xhttp.statusText}`));
+        }
       }
-    }
+    };
+
+    xhttp.open('PUT', uploadPathURL, true);
+    xhttp.setRequestHeader('Authorization', `token ${githubAccessToken}`);
+    xhttp.setRequestHeader('Accept', 'application/vnd.github.v3+json');
+    xhttp.send(JSON.stringify(uploadData));
   });
-  xhttp.open('PUT', uploadPathURL, true);
-  xhttp.setRequestHeader('Authorization', `token ${githubAccessToken}`);
-  xhttp.setRequestHeader('Accept', 'application/vnd.github.v3+json');
-  xhttp.send(uploadData);
 };
 
-function uploadGitHub(
+async function uploadGitHub(
   solution,
   problemName,
   uploadFileName,
   commitMessage,
-  problemDifficulty = undefined,
+  problemDifficulty = null
 ) {
-  if (problemDifficulty && problemDifficulty !== undefined) {
-    difficulty = problemDifficulty.trim();
+  // Ensure context is still valid before proceeding
+  if (!chrome || !chrome.storage) {
+    console.error("Chrome context invalidated.");
+    return;
   }
 
-  chrome.storage.local.get('githubAccessToken', (access_token) => {
-    const accessToken = access_token.githubAccessToken;
-    if (accessToken) {
-      chrome.storage.local.get('current_phase', (phase) => {
-        const currentPhase = phase.current_phase;
-        if (currentPhase === 'solve_and_push') {
-          chrome.storage.local.get('github_LinkedRepository', (linkedRepo) => {
-            const linkedRepository = linkedRepo.github_LinkedRepository;
-            if (linkedRepository) {
-              const githubFilePath = problemName + uploadFileName;
-              chrome.storage.local.get('userStatistics', (statistics) => {
-                const { userStatistics } = statistics;
-                let sha = null;
-
-                if (userStatistics !== undefined && userStatistics.sha !== undefined && userStatistics.sha[githubFilePath] !== undefined) {
-                  sha = userStatistics.sha[githubFilePath];
-                }
-                  uploadToGitHubRepository(
-                    accessToken,
-                    linkedRepository,
-                    solution,
-                    problemName,
-                    uploadFileName,
-                    sha,
-                    commitMessage,
-                    difficulty,
-                  );
-              });
-            }
-          });
+  try {
+    // Get the GitHub access token
+    const accessToken = await new Promise((resolve, reject) => {
+      chrome.storage.local.get('githubAccessToken', (result) => {
+        if (chrome.runtime.lastError) {
+          return reject(new Error('No GitHub access token found.'));
         }
+        resolve(result.githubAccessToken);
       });
+    });
+
+    if (accessToken) {
+      // Get the current phase
+      const currentPhase = await new Promise((resolve) => {
+        chrome.storage.local.get('current_phase', (result) => {
+          resolve(result.current_phase);
+        });
+      });
+
+      if (currentPhase === 'solve_and_push') {
+        // Get the linked GitHub repository
+        const linkedRepository = await new Promise((resolve) => {
+          chrome.storage.local.get('github_LinkedRepository', (result) => {
+            resolve(result.github_LinkedRepository);
+          });
+        });
+
+        if (linkedRepository) {
+          const githubFilePath = problemName + uploadFileName;
+
+          // Check for existing user statistics to retrieve SHA if available
+          const statistics = await new Promise((resolve) => {
+            chrome.storage.local.get('userStatistics', (result) => {
+              resolve(result.userStatistics);
+            });
+          });
+
+          let sha = null;
+          if (statistics && statistics.sha && statistics.sha[githubFilePath]) {
+            sha = statistics.sha[githubFilePath];
+          }
+
+          // Upload the solution to the GitHub repository
+          await uploadToGitHubRepository(
+            accessToken,
+            linkedRepository,
+            solution,
+            problemName,
+            uploadFileName,
+            sha,
+            commitMessage,
+            problemDifficulty
+          );
+        } else {
+          console.error('No linked repository found.');
+        }
+      } else {
+        console.error('Not in solve_and_push phase.');
+      }
+    } else {
+      console.error('No GitHub access token found.');
     }
-  });
+  } catch (error) {
+    console.error("Error in uploadGitHub: ", error);
+  }
 }
+
+
 
 const convertToKebabCase = (uploadFileName) => {
   return uploadFileName.replace(/[^a-zA-Z0-9\. ]/g, '').replace(/([a-z])([A-Z])/g, '$1-$2').replace(/[\s_]+/g, '-').toLowerCase();
 };
 
 function getSolutionLanguage() {
-  const languageElement = document.getElementsByClassName('divider text')[0].innerText;
-  const lang = languageElement.split('(')[0].trim();
-  if (lang.length > 0 && codeLanguage[lang]) {
-    return codeLanguage[lang];
+  // Query all anchor tags in the breadcrumb that might contain language info in the href
+  const languageLink = document.querySelector('a[href^="/domains/"]');
+  
+  if (languageLink) {
+    // Extract the href path (e.g., /domains/java)
+    const href = languageLink.getAttribute('href');
+    
+    // Extract the language name from the href (after "/domains/")
+    const lang = href.split('/domains/')[1].trim();
+    
+    // Check if the extracted language exists in your codeLanguage map
+    if (lang && codeLanguage[lang]) {
+      return codeLanguage[lang];  // Return the mapped language code
+    }
   }
-  return null;
+  
+  return null;  // Return null if no language is found or it's unsupported
 }
 
 function getProblemTitle() {
-  const problemTitleElement = document.querySelector('[class^="problems_header_content__title"] > h3').innerText;
-  if (problemTitleElement != null) {
-    return problemTitleElement;
+  // Select all <li> elements that contain a <span itemprop="name">
+  const problemTitleElement = document.querySelectorAll('li[itemprop="itemListElement"] span[itemprop="name"]');
+  
+  // Check if the 4th element exists (0-based index, so index 3 is the 4th element)
+  if (problemTitleElement.length >= 4) {
+    return problemTitleElement[3].innerText.trim();  // Return the title of the 4th item
   }
-  return '';
+  
+  return '';  // Return an empty string if the 4th element does not exist
 }
 
 function getProblemDifficulty() {
@@ -216,7 +281,7 @@ const loader = setInterval(() => {
           problemDifficulty = getProblemDifficulty();
           problemStatement = getProblemStatement();
           solutionLanguage = getSolutionLanguage();
-          console.log("Initialised Upload Variables");
+          console.log("Initialized Upload Variables");
 
           const probName = `${problemTitle}`;
           var questionUrl = window.location.href;
@@ -232,63 +297,105 @@ const loader = setInterval(() => {
                 userStatistics !== undefined &&
                 userStatistics.sha !== undefined &&
                 userStatistics.sha[githubFilePath] !== undefined
-                ) {
-                  sha = userStatistics.sha[githubFilePath];
-                }
-                if(sha === null){
-                  uploadGitHub(
-                    btoa(unescape(encodeURIComponent(problemStatement))),
-                    probName,
-                    'README.md',
-                    "Create README - GfG to GitHub",
-                    problemDifficulty,
-                  );
-                }
-                
-                chrome.runtime.sendMessage({ type:'getUserSolution'}, function(res) {
-                
+              ) {
+                sha = userStatistics.sha[githubFilePath];
+              }
+              if (sha === null) {
+                uploadGitHub(
+                  btoa(unescape(encodeURIComponent(problemStatement))),
+                  probName,
+                  'README.md',
+                  "Create README - GfG to GitHub",
+                  problemDifficulty,
+                );
+              }
+
+              chrome.runtime.sendMessage({ type: 'getUserSolution' }, function (res) {
                 console.log("getUserSolution - Message Sent.");
                 setTimeout(function () {
-                solution = document.getElementById('extractedUserSolution').innerText;
-                if (solution !== '') {
-                  setTimeout(function () {
-                    if(sha === null){
-                      uploadGitHub(
-                        btoa(unescape(encodeURIComponent(solution))),
-                        probName,
-                        convertToKebabCase(problemTitle + solutionLanguage),
-                        "Added Solution - GfG to GitHub",
-                        problemDifficulty,
-                      );
-                    }
-                    else{
-                      uploadGitHub(
-                        btoa(unescape(encodeURIComponent(solution))),
-                        probName,
-                        convertToKebabCase(problemTitle + solutionLanguage),
-                        "Updated Solution - GfG to GitHub",
-                        problemDifficulty,
-                      );
-                    }
-                  }, 1000);
-                }
-                chrome.runtime.sendMessage({ type:'deleteNode'}, function() {
-                  console.log("deleteNode - Message Sent.");
-                });
-              }, 1000);
+                  solution = document.getElementById('extractedUserSolution').innerText;
+                  if (solution !== '') {
+                    setTimeout(function () {
+                      if (sha === null) {
+                        uploadGitHub(
+                          btoa(unescape(encodeURIComponent(solution))),
+                          probName,
+                          convertToKebabCase(problemTitle + solutionLanguage),
+                          "Added Solution - GfG to GitHub",
+                          problemDifficulty,
+                        );
+                      } else {
+                        uploadGitHub(
+                          btoa(unescape(encodeURIComponent(solution))),
+                          probName,
+                          convertToKebabCase(problemTitle + solutionLanguage),
+                          "Updated Solution - GfG to GitHub",
+                          problemDifficulty,
+                        );
+                      }
+                    }, 1000);
+                  }
+                  chrome.runtime.sendMessage({ type: 'deleteNode' }, function () {
+                    console.log("deleteNode - Message Sent.");
+                  });
+                }, 1000);
+              });
             });
-          });
           }
         } 
-        
+
         else if (submissionResult.includes('Compilation Error')) {
           clearInterval(submissionLoader);
         } 
-        
+
         else if (!successfulSubmissionFlag && (submissionResult.includes('Compilation Error') || submissionResult.includes('Correct Answer'))) {
           clearInterval(submissionLoader);
         }
       }, 1000);
     });
   }
+
+  // HackerRank logic integrated within the loader
+  if (window.location.href.includes('www.hackerrank.com/challenges') || window.location.href.includes('hackerrank.com/challenges')) {
+    const hrSubmitButton = document.querySelector('.ui-btn.ui-btn-normal.ui-btn-primary.pull-right.hr-monaco-submit.ui-btn-styled'); // Submit button class
+
+    hrSubmitButton.addEventListener('click', function () {
+      successfulSubmissionFlag = true;
+
+      const submissionLoader = setInterval(() => {
+        // Check for the congratulations message
+        const congratsElement = document.querySelectorAll('.congrats-heading');
+        if (congratsElement.length !== 0) {
+          const congratsMessage = congratsElement[0].innerText;
+
+          if (congratsMessage.includes('Congratulations')) {
+            successfulSubmissionFlag = false;
+            clearInterval(submissionLoader);
+            console.log("Problem submitted successfully!");
+
+            // Set default values for problem details
+            const questionUrl = window.location.href;
+            const problemTitle = "Unknown Title"; // Default or placeholder value
+            const problemDifficulty = "Unknown Difficulty"; // Default or placeholder value
+            const problemStatement = "No statement available"; // Default or placeholder value
+
+            // Prepare problem statement for GitHub upload
+            const formattedStatement = `<h2><a href="${questionUrl}">${problemTitle}</a></h2><h3>Difficulty Level: ${problemDifficulty}</h3><hr>${problemStatement}`;
+
+            // Push to GitHub logic
+            uploadGitHub(formattedStatement, problemTitle, problemDifficulty);
+          }
+        } else {
+          // Handle any errors or other outcomes
+          const errorMessageElement = document.querySelector('.error-message-class-name'); // Replace with the actual class name for error messages
+          if (errorMessageElement) {
+            const errorMessage = errorMessageElement.innerText;
+            console.log("Submission Error: " + errorMessage);
+            clearInterval(submissionLoader);
+          }
+        }
+      }, 1000);
+    });
+  }
+
 }, 1000);
