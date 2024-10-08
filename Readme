@@ -1,0 +1,65 @@
+
+🚀 Chrome Extension for Automated Code Push from HackerRank to GitHub
+Overview
+This Chrome Extension automates the process of pushing solutions from HackerRank directly to your GitHub repository. After solving a challenge on HackerRank, the extension extracts key details such as the problem title, programming language, and difficulty level (currently hardcoded) and organizes the code into appropriate folders in your repository.
+
+Features
+Dark/Light Mode: Toggle between dark and light modes for a better user experience.
+GitHub Authentication: Securely authenticate your GitHub account through the extension.
+Repository Management: Link, create, or unlink repositories directly within the extension.
+Automated Code Push: Automatically pushes code to GitHub upon successful submission on HackerRank.
+Organized Structure: Solutions are categorized by difficulty level and programming language in your GitHub repository.
+
+How It Works
+Authenticate GitHub Account: On installing the extension, authenticate your GitHub account.
+Link GitHub Repository: Choose an existing repository or create a new one directly from the extension. You can unlink it any time.
+Solve a Problem: Navigate to HackerRank, solve a challenge, and upon submission, the extension pushes the solution to GitHub.
+Automatic Categorization: Solutions are organized into folders by difficulty and programming language.
+
+Challenges Faced
+GitHub Authentication: Managing GitHub tokens was complex, especially dealing with "access tokens" and "refresh tokens." Upon returning to HackerRank, the token was often lost.
+Solution: Implemented session storage to temporarily store access tokens, with improved error handling.
+Chrome Context Invalidated: Switching between HackerRank and the extension caused Chrome's context to invalidate, preventing the code push.
+Solution: Improved the message-passing mechanism and background script persistence to maintain the active context.
+Difficulty Level Extraction: HackerRank doesn’t display difficulty levels on the coding page.
+Solution: Plan to automate difficulty extraction via API calls or background scripts in the future.
+Element Identification: Identifying elements like problem title, language, and confirmation message was tricky due to DOM changes.
+Solution: Used efficient class selectors and mutation observers to dynamically capture these elements.
+
+Future Enhancements
+Dynamic Difficulty Extraction: Automate difficulty level extraction to eliminate hardcoded values.
+Problem Statistics: Track and display solved problem counts for different difficulty levels (easy, medium, hard).
+Chrome Web Store Launch: Plan to launch the extension on the Chrome Web Store.
+UI Improvements: Enhance the UI with HackerRank logos and a more intuitive interface.
+Error Handling: Improve error handling for cases when variables load late or fail to load.
+
+Installation & Setup
+Clone the Repository:
+bash
+Copy code
+git clone https://github.com/khyati0812/HackerrankToGithub
+
+Add Extension to Chrome:
+Go to chrome://extensions/ in your Chrome browser.
+Enable "Developer Mode" in the top-right corner.
+Click "Load unpacked" and select the cloned folder.
+Authenticate and Link GitHub Repository:
+Click the extension icon in the toolbar.
+Authenticate your GitHub account and choose a repository, or create one through the extension.
+Solve and Push:
+Solve any problem on HackerRank, and the extension will automatically push the solution to your GitHub repository.
+
+Resources
+GitHub API Authentication(By Atharva Nanavate).
+Context Invalidation Solution- stackoverflow.
+Github Authentication Docs.
+ChatGPT for guidance and problem-solving.
+
+Contributing
+Contributions are welcome! Fork the repository, make your changes, and create a pull request. Ensure your code follows the established guidelines and includes documentation.
+
+License
+This project is licensed under the MIT License. See the LICENSE file for more details.
+
+Contact
+For any questions or support, feel free to reach out at kaku08122002@gmail.com.
