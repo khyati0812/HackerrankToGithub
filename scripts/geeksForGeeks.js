@@ -26,7 +26,7 @@ const uploadToGitHubRepository = async (
 
   const uploadData = {
     message: commitMessage,
-    content: btoa(solution), // Encode solution to base64
+    content: solution, // Directly sending the solution without encoding
     sha,
   };
 
@@ -149,7 +149,7 @@ async function uploadGitHub(
           await uploadToGitHubRepository(
             accessToken,
             linkedRepository,
-            solution,
+            solution,  // Send solution directly without encoding
             problemName,
             uploadFileName,
             sha,
@@ -209,16 +209,13 @@ function getProblemTitle() {
 }
 
 function getProblemDifficulty() {
-  const problemDifficultyElement = document.querySelectorAll('[class^="problems_header_description"]')[0].children[0].innerText;
-  if (problemDifficultyElement != null) {
-    return problemDifficultyElement;
-  }
-  return '';
+  
+  return "Medium";
 }
 
 function getProblemStatement() {
-  const problemStatementElement = document.querySelector('[class^="problems_problem_content"]');
-  return `${problemStatementElement.outerHTML}`;
+  
+  return "Print";
 }
 
 function getCompanyAndTopicTags(problemStatement) {
@@ -302,6 +299,104 @@ const loader = setInterval(() => {
               }
               if (sha === null) {
                 uploadGitHub(
+                 problemStatement,
+                  probName,
+                  'README.md',
+                  "Create README - GfG to GitHub",
+                  problemDifficulty,
+                );
+              }
+
+              chrome.runtime.sendMessage({ type: 'getUserSolution' }, function (res) {
+                console.log("getUserSolution - Message Sent.");
+                setTimeout(function () {
+                  solution = document.getElementById('extractedUserSolution').innerText;
+                  if (solution !== '') {
+                    setTimeout(function () {
+                      if (sha === null) {
+                        uploadGitHub(
+                          solution,
+                          probName,
+                          convertToKebabCase(problemTitle + solutionLanguage),
+                          "Added Solution - GfG to GitHub",
+                          problemDifficulty,
+                        );
+                      } else {
+                        uploadGitHub(
+                          solution,
+                          probName,
+                          convertToKebabCase(problemTitle + solutionLanguage),
+                          "Updated Solution - GfG to GitHub",
+                          problemDifficulty,
+                        );
+                      }
+                    }, 1000);
+                  }
+                  chrome.runtime.sendMessage({ type: 'deleteNode' }, function () {
+                    console.log("deleteNode - Message Sent.");
+                  });
+                }, 1000);
+              });
+            });
+          }
+        } 
+
+        else if (submissionResult.includes('Compilation Error')) {
+          clearInterval(submissionLoader);
+        } 
+
+        else if (!successfulSubmissionFlag && (submissionResult.includes('Compilation Error') || submissionResult.includes('Correct Answer'))) {
+          clearInterval(submissionLoader);
+        }
+      }, 1000);
+    });
+  }
+
+  // HackerRank logic integrated within the loader
+
+  if (window.location.href.includes('www.hackerrank.com/challenges',)) {
+
+    const hrSubmitButton=document.querySelector('.ui-btn.ui-btn-normal.ui-btn-primary.pull-right.hr-monaco-submit.ui-btn-styled');
+
+    hrSubmitButton.addEventListener('click', function () {
+      //document.querySelector('.problems_header_menu__items__BUrou').click();
+      successfulSubmissionFlag = true;
+
+      const submissionLoader = setInterval(() => {
+        const submissionResult = document.querySelectorAll('.congrats-heading');
+       
+        const congratsMessage = submissionResult[0].innerText;
+
+        if (congratsMessage.includes('Congratulations') && successfulSubmissionFlag) {
+          successfulSubmissionFlag = false;
+          clearInterval(loader);
+          clearInterval(submissionLoader);
+         // document.querySelector('.problems_header_menu__items__BUrou').click();
+          problemTitle = getProblemTitle().trim();
+          problemDifficulty = getProblemDifficulty();
+          problemStatement = getProblemStatement();
+          solutionLanguage = getSolutionLanguage();
+          console.log("Initialized Upload Variables");
+
+          const probName = `${problemTitle}`;
+          var questionUrl = window.location.href;
+          problemStatement = `<h2><a href="${questionUrl}">${problemTitle}</a></h2><h3>Difficulty Level : ${problemDifficulty}</h3><hr>${problemStatement}`;
+          //problemStatement = getCompanyAndTopicTags(problemStatement);
+
+          if (solutionLanguage !== null) {
+            chrome.storage.local.get('userStatistics', (statistics) => {
+              const { userStatistics } = statistics;
+              const githubFilePath = probName + convertToKebabCase(problemTitle + solutionLanguage);
+              let sha = null;
+              if (
+                userStatistics !== undefined &&
+                userStatistics.sha !== undefined &&
+                userStatistics.sha[githubFilePath] !== undefined
+              ) {
+                sha = userStatistics.sha[githubFilePath];
+              }
+              if (sha === null) {
+                uploadGitHub(
                   btoa(unescape(encodeURIComponent(problemStatement))),
                   probName,
                   'README.md',
@@ -314,6 +409,7 @@ const loader = setInterval(() => {
                 console.log("getUserSolution - Message Sent.");
                 setTimeout(function () {
                   solution = document.getElementById('extractedUserSolution').innerText;
+                  console.log(solution);
                   if (solution !== '') {
                     setTimeout(function () {
                       if (sha === null) {
@@ -344,58 +440,15 @@ const loader = setInterval(() => {
           }
         } 
 
-        else if (submissionResult.includes('Compilation Error')) {
+        else if (congratsMessage.includes('Compilation Error')) {
           clearInterval(submissionLoader);
         } 
 
-        else if (!successfulSubmissionFlag && (submissionResult.includes('Compilation Error') || submissionResult.includes('Correct Answer'))) {
+        else if (!successfulSubmissionFlag && (congratsMessage.includes('Compilation Error') || congratsMessage.includes('Correct Answer'))) {
           clearInterval(submissionLoader);
-        }
-      }, 1000);
+        }}
+      , 1000);
     });
   }
-
-  // HackerRank logic integrated within the loader
-  if (window.location.href.includes('www.hackerrank.com/challenges') || window.location.href.includes('hackerrank.com/challenges')) {
-    const hrSubmitButton = document.querySelector('.ui-btn.ui-btn-normal.ui-btn-primary.pull-right.hr-monaco-submit.ui-btn-styled'); // Submit button class
-
-    hrSubmitButton.addEventListener('click', function () {
-      successfulSubmissionFlag = true;
-
-      const submissionLoader = setInterval(() => {
-        // Check for the congratulations message
-        const congratsElement = document.querySelectorAll('.congrats-heading');
-        if (congratsElement.length !== 0) {
-          const congratsMessage = congratsElement[0].innerText;
-
-          if (congratsMessage.includes('Congratulations')) {
-            successfulSubmissionFlag = false;
-            clearInterval(submissionLoader);
-            console.log("Problem submitted successfully!");
-
-            // Set default values for problem details
-            const questionUrl = window.location.href;
-            const problemTitle = "Unknown Title"; // Default or placeholder value
-            const problemDifficulty = "Unknown Difficulty"; // Default or placeholder value
-            const problemStatement = "No statement available"; // Default or placeholder value
-
-            // Prepare problem statement for GitHub upload
-            const formattedStatement = `<h2><a href="${questionUrl}">${problemTitle}</a></h2><h3>Difficulty Level: ${problemDifficulty}</h3><hr>${problemStatement}`;
-
-            // Push to GitHub logic
-            uploadGitHub(formattedStatement, problemTitle, problemDifficulty);
-          }
-        } else {
-          // Handle any errors or other outcomes
-          const errorMessageElement = document.querySelector('.error-message-class-name'); // Replace with the actual class name for error messages
-          if (errorMessageElement) {
-            const errorMessage = errorMessageElement.innerText;
-            console.log("Submission Error: " + errorMessage);
-            clearInterval(submissionLoader);
-          }
-        }
-      }, 1000);
-    });
-  }
-
+  
 }, 1000);

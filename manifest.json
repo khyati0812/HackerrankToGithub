@@ -10,9 +10,9 @@
       "default_popup": "popup.html"
   },
   "icons": {
-    "16": "assets/logo_128x128.png",
-    "48": "assets/logo_128x128.png",
-    "128": "assets/logo_128x128.png"
+    "16": "assets/logo128x128.png",
+    "48": "assets/logo128x128.png",
+    "128": "assets/logo128x128.png"
   },
   "background": {
       "service_worker": "scripts/background.js"
