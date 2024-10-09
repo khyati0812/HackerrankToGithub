@@ -1,1 +1,1 @@
-Google Chrome Extension for pushing the code from Hackerrank to Github.
+"From Problem Solved to Code Committed: Seamlessly Push Your HackerRank Solutions to GitHub"
